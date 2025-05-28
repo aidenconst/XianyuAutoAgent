@@ -24,7 +24,7 @@ FROM python:3.10-alpine
 # 添加元数据标签
 LABEL maintainer="coderxiu<coderxiu@qq.com>"
 LABEL description="闲鱼AI客服机器人"
-LABEL version="1.0"
+LABEL version="1.1"
 
 # 设置时区和编码
 ENV TZ=Asia/Shanghai \
@@ -56,15 +56,16 @@ COPY --from=builder /opt/venv /opt/venv
 RUN mkdir -p data prompts
 
 # 复制示例提示词文件并重命名为正式文件
-COPY prompts/classify_prompt_example.txt prompts/classify_prompt.txt
-COPY prompts/price_prompt_example.txt prompts/price_prompt.txt
-COPY prompts/tech_prompt_example.txt prompts/tech_prompt.txt
-COPY prompts/default_prompt_example.txt prompts/default_prompt.txt
+COPY prompts/classify_prompt.txt prompts/classify_prompt.txt
+COPY prompts/price_prompt.txt prompts/price_prompt.txt
+COPY prompts/tech_prompt.txt prompts/tech_prompt.txt
+COPY prompts/default_prompt.txt prompts/default_prompt.txt
 
 # 只复制绝对必要的文件
-COPY main.py XianyuAgent.py XianyuApis.py context_manager.py ./
+COPY main.py XianyuAgent.py XianyuApis.py context_manager.py WebServer.py ./
 COPY utils/ utils/
 COPY static/ static/
+COPY templates/ templates/
 
 # 容器启动时运行的命令
-CMD ["python", "main.py"]
+CMD bash -c "python main.py & python WebServer.py"

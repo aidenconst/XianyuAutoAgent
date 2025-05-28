@@ -12,7 +12,8 @@ from XianyuApis import XianyuApis
 from utils.xianyu_utils import generate_mid, generate_uuid, trans_cookies, generate_device_id, decrypt
 from XianyuAgent import XianyuReplyBot
 from context_manager import ChatContextManager
-
+from utils.kd_utils import query_express_fee
+# from WebServer import run_server
 
 class XianyuLive:
     def __init__(self, cookies_str):
@@ -375,7 +376,17 @@ class XianyuLive:
             self.context_manager.add_message_by_chat(chat_id, self.myid, item_id, "assistant", bot_reply)
             
             logger.info(f"机器人回复: {bot_reply}")
-            await self.send_msg(websocket, chat_id, send_user_id, bot_reply)
+
+            backmsg = await query_express_fee(bot_reply, self.post_url)
+            # 如果未解析出来数据，说明不是查价信息
+            if backmsg is None:
+                logger.info(f"无有效解析信息: {backmsg}")
+                await self.send_msg(websocket, chat_id, send_user_id, bot_reply)
+            # 解析出来，说明是查价信息
+            else:
+                logger.info(f"解析有效: {backmsg}")
+                await self.send_msg(websocket, chat_id, send_user_id, f"{backmsg['channelInfo']}最便宜的快递：\n{backmsg['text']}")
+                await self.send_msg(websocket, chat_id, send_user_id, f"{backmsg['channelInfo']}所有快递价格如下：\n\n{backmsg['info']}")
             
         except Exception as e:
             logger.error(f"处理消息时发生错误: {str(e)}")
@@ -521,5 +532,6 @@ if __name__ == '__main__':
     cookies_str = os.getenv("COOKIES_STR")
     bot = XianyuReplyBot()
     xianyuLive = XianyuLive(cookies_str)
+    #run_server()
     # 常驻进程
     asyncio.run(xianyuLive.main())
