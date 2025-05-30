@@ -7,8 +7,7 @@ RUN apk add --no-cache --virtual .build-deps \
     gcc \
     musl-dev \
     libffi-dev \
-    build-base \
-    curl
+    build-base
 
 # 创建虚拟环境并安装依赖
 RUN python -m venv /opt/venv
@@ -24,7 +23,7 @@ FROM python:3.10-alpine
 # 添加元数据标签
 LABEL maintainer="coderxiu<coderxiu@qq.com>"
 LABEL description="闲鱼AI客服机器人"
-LABEL version="1.1"
+LABEL version="2.0"
 
 # 设置时区和编码
 ENV TZ=Asia/Shanghai \
@@ -37,13 +36,9 @@ ENV TZ=Asia/Shanghai \
 # 只安装运行时必要的包
 RUN apk add --no-cache \
     tzdata \
-    nodejs \
-    npm \
-    && npm install -g npm@10.2.4 \
-    && npm cache clean --force \
     && ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
     && echo Asia/Shanghai > /etc/timezone \
-    # 减小apk缓存
+    # 清理apk缓存
     && rm -rf /var/cache/apk/*
 
 # 设置工作目录
@@ -56,16 +51,14 @@ COPY --from=builder /opt/venv /opt/venv
 RUN mkdir -p data prompts
 
 # 复制示例提示词文件并重命名为正式文件
-COPY prompts/classify_prompt.txt prompts/classify_prompt.txt
-COPY prompts/price_prompt.txt prompts/price_prompt.txt
-COPY prompts/tech_prompt.txt prompts/tech_prompt.txt
-COPY prompts/default_prompt.txt prompts/default_prompt.txt
+COPY prompts/classify_prompt_example.txt prompts/classify_prompt.txt
+COPY prompts/price_prompt_example.txt prompts/price_prompt.txt
+COPY prompts/tech_prompt_example.txt prompts/tech_prompt.txt
+COPY prompts/default_prompt_example.txt prompts/default_prompt.txt
 
 # 只复制绝对必要的文件
-COPY main.py XianyuAgent.py XianyuApis.py context_manager.py WebServer.py ./
+COPY main.py XianyuAgent.py XianyuApis.py context_manager.py ./
 COPY utils/ utils/
-COPY static/ static/
-COPY templates/ templates/
 
 # 容器启动时运行的命令
-CMD bash -c "python main.py & python WebServer.py"
+CMD ["python", "main.py"]
